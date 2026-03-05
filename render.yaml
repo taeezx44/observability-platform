@@ -1,0 +1,32 @@
+services:
+  # Web Service for the Observability Platform
+  - type: web
+    name: observability-platform
+    env: go
+    plan: free
+    buildCommand: go build -o app
+    startCommand: ./app
+    healthCheckPath: /health
+    
+    # Environment variables
+    envVars:
+      - key: PORT
+        value: 10000
+      - key: GO_VERSION
+        value: 1.26
+        
+  # Static File Service for Frontend (alternative approach)
+  - type: web
+    name: observability-frontend
+    env: static
+    plan: free
+    buildCommand: cd frontend && npm install && npm run build
+    staticPublishPath: frontend/dist
+    healthCheckPath: /
+    
+    # Environment variables for frontend build
+    envVars:
+      - key: NODE_VERSION
+        value: 18
+      - key: VITE_API_URL
+        value: https://observability-platform.onrender.com
