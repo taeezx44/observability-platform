@@ -99,19 +99,59 @@ observability-platform/
 ### Environment Variables
 
 ```bash
-# ClickHouse
+# ClickHouse Database
 CLICKHOUSE_URL=clickhouse:9000
 CLICKHOUSE_USER=admin
 CLICKHOUSE_PASSWORD=secret
 CLICKHOUSE_DB=observability
 
-# Scraper
+# Metrics Scraper
 SCRAPE_INTERVAL=15s
 SCRAPE_TARGETS=http://app:8080/metrics,http://db:9090/metrics
 
-# Alerting
+# API Server
+PORT=8080
+VITE_API_URL=http://localhost:8080
+
+# Alerting Engine
 SLACK_WEBHOOK_URL=https://hooks.slack.com/...
 RULES_PATH=./rules.yaml
+ALERT_INTERVAL=30s
+
+# Frontend (for development)
+VITE_API_URL=http://localhost:8080
+
+# Docker/Production
+NODE_ENV=production
+```
+
+### Docker Compose Environment
+
+Create `.env` file for Docker:
+
+```bash
+# .env
+CLICKHOUSE_URL=clickhouse:9000
+CLICKHOUSE_USER=admin
+CLICKHOUSE_PASSWORD=secret123
+CLICKHOUSE_DB=observability
+
+SCRAPE_INTERVAL=15s
+SCRAPE_TARGETS=http://api:8080/metrics
+
+SLACK_WEBHOOK_URL=https://hooks.slack.com/services/YOUR/WEBHOOK
+RULES_PATH=./rules.yaml
+ALERT_INTERVAL=30s
+```
+
+### Render.com Environment
+
+```bash
+# Render environment variables
+PORT=10000
+GO_VERSION=1.26
+NODE_VERSION=18
+VITE_API_URL=https://observability-platform.onrender.com
 ```
 
 ### Alert Rules (alerting/rules.yaml)
