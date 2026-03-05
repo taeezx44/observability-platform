@@ -283,6 +283,52 @@ demo-quick:
 	@echo "🔍 API: http://localhost:8080"
 	@echo "📊 Metrics: http://localhost:8080/metrics"
 
+# 10k req/sec benchmark test
+benchmark-10k:
+	@echo "🚀 Running 10k req/sec benchmark test..."
+	@echo "Starting services..."
+	docker-compose up -d
+	@echo "Waiting for services to be ready..."
+	sleep 20
+	@echo "Running load test..."
+	cd benchmark && go test -bench=Benchmark10kReqSec -benchtime=30s -v
+	@echo "Benchmark completed!"
+
+# Full benchmark suite
+benchmark-full:
+	@echo "📊 Running full benchmark suite..."
+	@echo "Starting services..."
+	docker-compose up -d
+	@echo "Waiting for services to be ready..."
+	sleep 20
+	@echo "Running all benchmark tests..."
+	cd benchmark && go test -bench=. -benchtime=10s -v
+	@echo "Full benchmark completed!"
+
+# Performance profiling
+profile:
+	@echo "🔍 Running performance profiling..."
+	@echo "Starting services..."
+	docker-compose up -d
+	@echo "Waiting for services to be ready..."
+	sleep 20
+	@echo "Profiling API service..."
+	cd api && go test -cpuprofile=cpu.prof -memprofile=mem.prof -bench=. ./...
+	@echo "Profiling completed!"
+	@echo "View with: go tool pprof api/cpu.prof"
+
+# Load test with custom parameters
+benchmark-custom:
+	@echo "⚙️ Running custom benchmark..."
+	@if [ -z "$(RPS)" ]; then echo "Usage: make benchmark-custom RPS=5000 USERS=50 DURATION=30s"; exit 1; fi
+	@echo "Starting services..."
+	docker-compose up -d
+	@echo "Waiting for services to be ready..."
+	sleep 20
+	@echo "Running custom load test: $(RPS) RPS, $(USERS) users, $(DURATION) duration"
+	cd benchmark && go test -bench=BenchmarkCustomLoad -benchtime=$(DURATION) -v
+	@echo "Custom benchmark completed!"
+
 # Production build
 prod-build:
 	@echo "🏭 Production build..."
