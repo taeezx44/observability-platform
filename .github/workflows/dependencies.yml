@@ -1,0 +1,184 @@
+name: Dependency Updates
+
+on:
+  schedule:
+    # Check for updates daily at 3 AM UTC
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+
+jobs:
+  update-go-deps:
+    name: Update Go Dependencies
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: Setup Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.21'
+        
+    - name: Update Go modules
+      run: |
+        echo "Updating API dependencies..."
+        cd api && go get -u ./... && go mod tidy
+        
+        echo "Updating collector dependencies..."
+        cd ../collector && go get -u ./... && go mod tidy
+        
+        echo "Updating alerting dependencies..."
+        cd ../alerting && go get -u ./... && go mod tidy
+        
+        echo "Updating demo dependencies..."
+        cd ../demo/api && go get -u ./... && go mod tidy
+        cd ../demo/worker && go get -u ./... && go mod tidy
+        cd ../demo/database && go get -u ./... && go mod tidy
+        
+        echo "Updating simple-api dependencies..."
+        cd ../../simple-api && go get -u ./... && go mod tidy
+        
+    - name: Check for changes
+      id: verify-changed-files
+      run: |
+        if [ -n "$(git status --porcelain)" ]; then
+          echo "changed=true" >> $GITHUB_OUTPUT
+        else
+          echo "changed=false" >> $GITHUB_OUTPUT
+        fi
+        
+    - name: Create Pull Request
+      if: steps.verify-changed-files.outputs.changed == 'true'
+      uses: peter-evans/create-pull-request@v5
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        commit-message: 'chore: update Go dependencies'
+        title: 'chore: update Go dependencies'
+        body: |
+          🤖 Automated dependency update
+          
+          This PR updates Go modules to their latest versions.
+          
+          **Changes:**
+          - Updated all Go module dependencies
+          - Ran `go mod tidy` to clean up modules
+          
+          **Testing:**
+          - [ ] All tests pass
+          - [ ] Manual testing completed
+          - [ ] No breaking changes detected
+          
+          Please review the changes and ensure everything works correctly before merging.
+        branch: chore/update-go-deps
+        delete-branch: true
+
+  update-node-deps:
+    name: Update Node.js Dependencies  
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        cache-dependency-path: frontend/package-lock.json
+        
+    - name: Update npm dependencies
+      working-directory: ./frontend
+      run: |
+        echo "Updating npm dependencies..."
+        npm update
+        npm audit fix || true
+        
+    - name: Check for changes
+      id: verify-changed-files
+      run: |
+        if [ -n "$(git status --porcelain)" ]; then
+          echo "changed=true" >> $GITHUB_OUTPUT
+        else
+          echo "changed=false" >> $GITHUB_OUTPUT
+        fi
+        
+    - name: Create Pull Request
+      if: steps.verify-changed-files.outputs.changed == 'true'
+      uses: peter-evans/create-pull-request@v5
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        commit-message: 'chore: update Node.js dependencies'
+        title: 'chore: update Node.js dependencies'
+        body: |
+          🤖 Automated Node.js dependency update
+          
+          This PR updates npm packages to their latest versions.
+          
+          **Changes:**
+          - Updated all npm dependencies
+          - Ran `npm audit fix` to address security issues
+          
+          **Testing:**
+          - [ ] All tests pass
+          - [ ] Manual testing completed  
+          - [ ] No breaking changes detected
+          
+          Please review the changes and ensure everything works correctly before merging.
+        branch: chore/update-node-deps
+        delete-branch: true
+
+  security-audit:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.21'
+        
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        
+    - name: Run Go security audit
+      run: |
+        echo "Running Go security audit..."
+        go install golang.org/x/vuln/cmd/govulncheck@latest
+        
+        cd api && govulncheck ./...
+        cd ../collector && govulncheck ./...
+        cd ../alerting && govulncheck ./...
+        cd ../demo/api && govulncheck ./...
+        cd ../demo/worker && govulncheck ./...
+        cd ../demo/database && govulncheck ./...
+        cd ../../simple-api && govulncheck ./...
+        
+    - name: Run npm security audit
+      working-directory: ./frontend
+      run: |
+        echo "Running npm security audit..."
+        npm audit --audit-level=moderate
+        
+    - name: Run Gosec security scanner
+      uses: securecodewarrior/github-action-gosec@master
+      with:
+        args: '-no-fail -fmt json -out gosec-report.json ./...'
+        
+    - name: Upload security reports
+      uses: actions/upload-artifact@v3
+      with:
+        name: security-reports
+        path: |
+          gosec-report.json
+        retention-days: 30
