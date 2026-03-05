@@ -1,5 +1,11 @@
 # Self-hosted Observability Platform
 
+![Go Version](https://img.shields.io/badge/Go-1.21-blue)
+![License](https://img.shields.io/badge/License-MIT-green)
+![Build](https://github.com/taeezx44/observability-platform/actions/workflows/ci.yml/badge.svg)
+![Tests](https://img.shields.io/badge/Tests-Passing-brightgreen)
+![Docker](https://img.shields.io/badge/Docker-Ready-blue)
+
 Complete observability platform built with Go + React + ClickHouse. Free, open-source, and self-hosted.
 
 ## 🚀 Quick Start
