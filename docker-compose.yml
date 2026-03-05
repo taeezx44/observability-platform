@@ -1,0 +1,72 @@
+version: '3.9'
+
+services:
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:24
+    ports:
+      - "8123:8123"   # HTTP interface
+      - "9000:9000"   # Native protocol
+    environment:
+      CLICKHOUSE_DB: observability
+      CLICKHOUSE_USER: admin
+      CLICKHOUSE_PASSWORD: secret
+    volumes:
+      - ch_data:/var/lib/clickhouse
+
+  kafka:
+    image: confluentinc/cp-kafka:7.6.0
+    environment:
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_NODE_ID: 1
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+    ports:
+      - "9092:9092"
+
+  collector:
+    build: ./collector
+    environment:
+      CLICKHOUSE_URL: clickhouse:9000
+      KAFKA_URL: kafka:9092
+      SCRAPE_INTERVAL: 15s
+    depends_on:
+      - clickhouse
+      - kafka
+
+  api:
+    build: ./api
+    ports:
+      - "8080:8080"
+    environment:
+      CLICKHOUSE_URL: clickhouse:9000
+      KAFKA_URL: kafka:9092
+    depends_on:
+      - clickhouse
+      - kafka
+      - collector
+
+  alerting:
+    build: ./alerting
+    environment:
+      CLICKHOUSE_URL: clickhouse:9000
+      SLACK_WEBHOOK_URL: ${SLACK_WEBHOOK_URL:-}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+    depends_on:
+      - clickhouse
+      - kafka
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    environment:
+      VITE_API_URL: http://localhost:8080
+    depends_on:
+      - api
+
+volumes:
+  ch_data:

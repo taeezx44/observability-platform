@@ -1,0 +1,28 @@
+rules:
+  - name: HighCPU
+    metric: cpu_usage_percent
+    condition: ">"
+    threshold: 85
+    for: 2m
+    severity: critical
+
+  - name: HighMemory
+    metric: memory_usage_percent
+    condition: ">"
+    threshold: 90
+    for: 5m
+    severity: warning
+
+  - name: HighErrorRate
+    metric: http_errors_total
+    condition: ">"
+    threshold: 100
+    for: 1m
+    severity: critical
+
+  - name: LowDiskSpace
+    metric: disk_free_percent
+    condition: "<"
+    threshold: 10
+    for: 5m
+    severity: warning
