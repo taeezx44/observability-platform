@@ -1,0 +1,207 @@
+version: '3.8'
+
+services:
+  # Demo API Service
+  demo-api:
+    build:
+      context: ./demo/api
+      dockerfile: Dockerfile
+    ports:
+      - "8081:8081"
+    environment:
+      - PORT=8081
+      - SERVICE_NAME=demo-api
+    networks:
+      - observability
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Demo Worker Service
+  demo-worker:
+    build:
+      context: ./demo/worker
+      dockerfile: Dockerfile
+    ports:
+      - "8082:8082"
+    environment:
+      - PORT=8082
+      - SERVICE_NAME=demo-worker
+    networks:
+      - observability
+    depends_on:
+      - demo-api
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8082/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Demo Database Service
+  demo-database:
+    build:
+      context: ./demo/database
+      dockerfile: Dockerfile
+    ports:
+      - "8083:8083"
+    environment:
+      - PORT=8083
+      - SERVICE_NAME=demo-database
+    networks:
+      - observability
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8083/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Observability Platform API
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - PORT=8080
+      - CLICKHOUSE_URL=clickhouse:9000
+      - CLICKHOUSE_USER=admin
+      - CLICKHOUSE_PASSWORD=secret
+      - CLICKHOUSE_DB=observability
+      - SCRAPE_TARGETS=http://demo-api:8081/metrics,http://demo-worker:8082/metrics,http://demo-database:8083/metrics
+    networks:
+      - observability
+    depends_on:
+      - clickhouse
+      - kafka
+      - demo-api
+      - demo-worker
+      - demo-database
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:80"
+    environment:
+      - VITE_API_URL=http://localhost:8080
+    networks:
+      - observability
+    depends_on:
+      - api
+
+  # ClickHouse Database
+  clickhouse:
+    image: clickhouse/clickhouse-server:24
+    ports:
+      - "8123:8123"
+      - "9000:9000"
+    environment:
+      - CLICKHOUSE_DB=observability
+      - CLICKHOUSE_USER=admin
+      - CLICKHOUSE_PASSWORD=secret
+      - CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT=1
+    volumes:
+      - clickhouse_data:/var/lib/clickhouse
+      - ./migrations:/docker-entrypoint-initdb.d
+    networks:
+      - observability
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8123/ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Kafka
+  kafka:
+    image: confluentinc/cp-kafka:7.6.0
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: true
+    networks:
+      - observability
+    depends_on:
+      - zookeeper
+    healthcheck:
+      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Zookeeper
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.6.0
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    networks:
+      - observability
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "2181"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Collector Service
+  collector:
+    build:
+      context: ./collector
+      dockerfile: Dockerfile
+    environment:
+      - CLICKHOUSE_URL=clickhouse:9000
+      - CLICKHOUSE_USER=admin
+      - CLICKHOUSE_PASSWORD=secret
+      - CLICKHOUSE_DB=observability
+      - SCRAPE_INTERVAL=15s
+      - SCRAPE_TARGETS=http://demo-api:8081/metrics,http://demo-worker:8082/metrics,http://demo-database:8083/metrics
+    networks:
+      - observability
+    depends_on:
+      - clickhouse
+      - kafka
+      - demo-api
+      - demo-worker
+      - demo-database
+
+  # Alerting Service
+  alerting:
+    build:
+      context: ./alerting
+      dockerfile: Dockerfile
+    environment:
+      - CLICKHOUSE_URL=clickhouse:9000
+      - CLICKHOUSE_USER=admin
+      - CLICKHOUSE_PASSWORD=secret
+      - CLICKHOUSE_DB=observability
+      - RULES_PATH=./rules.yaml
+      - SLACK_WEBHOOK_URL=${SLACK_WEBHOOK_URL:-}
+    networks:
+      - observability
+    depends_on:
+      - clickhouse
+      - kafka
+    volumes:
+      - ./alerting/rules.yaml:/app/rules.yaml
+
+volumes:
+  clickhouse_data:
+
+networks:
+  observability:
+    driver: bridge

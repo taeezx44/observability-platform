@@ -51,6 +51,32 @@ func main() {
 	handlers.NewLogsHandler(store).RegisterRoutes(router)
 	handlers.NewTracesHandler(store).RegisterRoutes(router)
 
+	// Prometheus metrics endpoint
+	router.Handle("/metrics", handlers.NewPrometheusMetricsHandler()).Methods("GET")
+
+	// WebSocket streaming logs
+	wsHandler := handlers.NewWebSocketHandler()
+	wsHandler.StartBroadcaster()
+	router.Handle("/ws/logs", wsHandler).Methods("GET")
+
+	// API info endpoint
+	router.HandleFunc("/api", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		fmt.Fprintf(w, `{
+			"name": "Observability Platform",
+			"version": "1.0.0",
+			"services": ["collector", "api", "alerting", "frontend"],
+			"features": ["metrics", "logs", "traces", "alerting"],
+			"status": "running",
+			"endpoints": {
+				"metrics": "/metrics",
+				"health": "/health",
+				"websocket": "/ws/logs",
+				"api": "/api"
+			}
+		}`)
+	}).Methods("GET")
+
 	// Health check
 	router.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
