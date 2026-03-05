@@ -76,6 +76,11 @@ func startHealthCheck(port string) {
 	log.Println("Starting health check server...")
 
 	// Simple HTTP server for health checks
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/plain")
+		w.Write([]byte("Demo Worker Service Running"))
+	})
+
 	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		status := "healthy"
 		if rand.Float32() < 0.05 { // 5% chance of unhealthy

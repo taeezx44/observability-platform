@@ -17,6 +17,12 @@ func main() {
 	fs := http.FileServer(http.Dir("frontend/dist/"))
 	http.Handle("/", fs)
 
+	// Root route for API - Portfolio friendly
+	http.HandleFunc("/api-root", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/plain")
+		w.Write([]byte("Observability API Running"))
+	})
+
 	// Health check endpoint
 	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")

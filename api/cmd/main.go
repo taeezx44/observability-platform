@@ -77,6 +77,12 @@ func main() {
 		}`)
 	}).Methods("GET")
 
+	// Root route - Portfolio friendly
+	router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/plain")
+		w.Write([]byte("Observability API Running"))
+	}).Methods("GET")
+
 	// Health check
 	router.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
