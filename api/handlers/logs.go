@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	"github.com/yourname/observability/collector/storage"
+	"github.com/taeezx44/observability-platform/collector/storage"
 )
 
 type LogsHandler struct {

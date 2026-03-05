@@ -9,8 +9,8 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
-	"github.com/yourname/observability/api/handlers"
-	"github.com/yourname/observability/collector/storage"
+	"github.com/taeezx44/observability-platform/api/handlers"
+	"github.com/taeezx44/observability-platform/collector/storage"
 )
 
 func main() {

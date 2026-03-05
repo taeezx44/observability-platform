@@ -5,7 +5,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/yourname/observability/collector/storage"
+	"github.com/taeezx44/observability-platform/collector/storage"
 )
 
 func main() {

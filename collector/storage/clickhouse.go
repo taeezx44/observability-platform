@@ -6,9 +6,9 @@ import (
 	"time"
 
 	"github.com/ClickHouse/clickhouse-go/v2"
-	"github.com/yourname/observability/collector/logger"
-	"github.com/yourname/observability/collector/scraper"
-	"github.com/yourname/observability/collector/tracer"
+	"github.com/taeezx44/observability-platform/collector/logger"
+	"github.com/taeezx44/observability-platform/collector/scraper"
+	"github.com/taeezx44/observability-platform/collector/tracer"
 )
 
 type ClickHouseStorage struct {

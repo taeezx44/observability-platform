@@ -6,8 +6,8 @@ import (
 	"strconv"
 
 	"github.com/gorilla/mux"
-	"github.com/yourname/observability/collector/storage"
-	"github.com/yourname/observability/collector/tracer"
+	"github.com/taeezx44/observability-platform/collector/storage"
+	"github.com/taeezx44/observability-platform/collector/tracer"
 )
 
 type TracesHandler struct {

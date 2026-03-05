@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/yourname/observability/collector/scraper"
-	"github.com/yourname/observability/collector/storage"
+	"github.com/taeezx44/observability-platform/collector/scraper"
+	"github.com/taeezx44/observability-platform/collector/storage"
 )
 
 func main() {
@@ -16,7 +16,7 @@ func main() {
 	clickhouseURL := getEnv("CLICKHOUSE_URL", "clickhouse:9000")
 	scrapeInterval := getEnvDuration("SCRAPE_INTERVAL", 15*time.Second)
 	targetsEnv := getEnv("SCRAPE_TARGETS", "http://localhost:8080/metrics")
-	
+
 	// Parse targets
 	targets := strings.Split(targetsEnv, ",")
 	for i, target := range targets {
@@ -24,7 +24,7 @@ func main() {
 	}
 
 	// Connect to ClickHouse
-	dsn := fmt.Sprintf("clickhouse://%s:%s@%s/%s", 
+	dsn := fmt.Sprintf("clickhouse://%s:%s@%s/%s",
 		getEnv("CLICKHOUSE_USER", "admin"),
 		getEnv("CLICKHOUSE_PASSWORD", "secret"),
 		clickhouseURL,

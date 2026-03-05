@@ -9,7 +9,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/yourname/observability/collector/storage"
+	"github.com/taeezx44/observability-platform/collector/storage"
 	"gopkg.in/yaml.v3"
 )
 
@@ -32,9 +32,9 @@ type RulesConfig struct {
 // ── Alert Engine ──────────────────────────────────────────────────────────────
 
 type Engine struct {
-	rules   []AlertRule
-	store   *storage.ClickHouseStorage
-	firing  map[string]time.Time // rule name → when it first fired
+	rules    []AlertRule
+	store    *storage.ClickHouseStorage
+	firing   map[string]time.Time // rule name → when it first fired
 	slackURL string
 }
 

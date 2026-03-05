@@ -1,6 +1,6 @@
-module github.com/yourname/observability
+module github.com/taeezx44/observability-platform
 
-go 1.21
+go 1.26
 
 require (
 	github.com/ClickHouse/clickhouse-go/v2 v2.15.0
